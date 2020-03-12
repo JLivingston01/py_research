@@ -30,3 +30,28 @@ while w0 > .5:
     
     print(t,w0,u)
     
+
+
+
+b=5
+init = 0
+
+w0 = abs(b-init)
+
+
+t = 0
+u = 0
+
+while w0 > .5:
+    a = init+np.random.normal(0,.1)
+    
+    w1 = abs(b-a)
+    
+    if w1<w0:
+        init = a
+        w0=w1
+        u+=1
+    t+=1
+    
+    print(t,w0,u)
+    
