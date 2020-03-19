@@ -97,3 +97,7 @@ for trial in range(100):
         print(t,w0,u)
         
     coefs.append(list(initcoefs))
+
+coefs = np.array(coefs)
+
+np.mean(coefs,axis=0)
