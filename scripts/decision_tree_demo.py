@@ -62,9 +62,9 @@ dat['criteria']='parent,'
 dd = dat.sample(1000)
 
 
-def split(subdat,grpidinit=0,maxnode=300):
+def split(subdat,grpidinit=0,maxnode=300,minnode = 50):
     #subdat = dat.copy()
-    grpid = grpidinit+1
+    grpid = grpidinit+3
     if (entropy(subdat['income'])==0)|(len(subdat)<maxnode):
         subdat['node']=grpid
         return subdat
@@ -87,7 +87,10 @@ def split(subdat,grpidinit=0,maxnode=300):
         splt1['criteria']=splt1['criteria']+choice+str(0)+","
         splt2['criteria']=splt2['criteria']+choice+str(1)+","
         
-        return [split(splt1,grpidinit=2*(grpid+1),maxnode=maxnode),split(splt2,grpidinit=2*(grpid+1)+1,maxnode=maxnode)]
+ #       if (len(splt1)<minnode)|(len(splt2)<minnode):
+            
+            
+        return [split(splt1,grpidinit=grpid+1,maxnode=maxnode),split(splt2,grpidinit=grpid+2,maxnode=maxnode)]
         
 groups = split(dd,maxnode=100)   
 
@@ -110,5 +113,10 @@ predtab=pd.pivot_table(output,
                        aggfunc='mean').reset_index().rename(mapper={'income':'pred'},
                                                   axis='columns')
 
+ddd = pd.merge(output,predtab,on=['node'],how='left')
+
+ddd['pred']=np.where(ddd['pred']>.5,1,0)
+
+np.mean(np.where(ddd['pred']==ddd['income'],1,0))
 
 entropy(dat[dat['income']==1]['income'])
