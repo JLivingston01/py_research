@@ -99,7 +99,7 @@ matchdf.sort_values(by='match',ascending=False,inplace=True)
 matchdf.reset_index(inplace=True,drop=True)
 plt.plot(matchdf['match']) 
 
-variables=  list(matchdf['dim'][:14])
+variables=  list(matchdf['dim'][:30])
 
 
 X = dat[variables].copy()
@@ -122,7 +122,7 @@ def activation(x):
 
 lr=.001
 grad0 = np.array([1000 for i in logistic_coefs])
-tol = 1e-8
+tol = 1e-12
 for i in range(500):
     grad = (X.T@((predict(X,logistic_coefs)-Y)*del_sig(predict(X,logistic_coefs))))
     logistic_coefs=logistic_coefs-lr*grad
