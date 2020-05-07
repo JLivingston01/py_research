@@ -1,22 +1,42 @@
 
+"""
+A model for large positive outcomes can be developed using logistic regression
+with no activation function. Consider a logistic regression:
+    1. X@B = ln(Y/(1-Y)) -> Y = 1/(1-e**(-X@B))
+Y is a probability between 0 and 1, and Y/(1-Y) represents the "odds" of each
+observation. ln(Y/(1-Y)) then represents the "log odds", and the linear model
+X@B is fit to the log odds of observations. Odds are necessarily greater than 
+zero, with no upper bound, thus when exponentiating the log odds linear model,
+we obtain a model for a potentially very large outcome:
+    2. e**(X@B) = Y/(1-Y) = L
+Therefore, given a large positive outcome and predictors, an exponential model
+akin to (2) can be fitted using the same techniques used to fit a logistic 
+regression. This is done by calculating a value between 0 and 1 for each
+outcome in the same way that one would calculate a probability given odds:
+    3. Y = L/(1+L)
+Logistic regression can then be fit to predict the left side of (3) for each 
+observation. Predictions for L can then be expressed as:
+    4. predL = sigmoid(X@B)/(1-sigmoid(X@B))
+Further, predicted numeric outcomes can be expressed as the product of model
+factors corresponding to each predictor in X:
+    e**(X@B) = L = e**(x1*b1)*e**(x2*b2)*...*e**(xn*bn)
+    
+
+"""
 
 
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+#FAKE RANDOM DATA AND 
 x = np.random.normal(10,3,(100,2))
 
 beta = [1.5,.25]
 
-sales = np.exp(x@beta)
+L = np.exp(x@beta+np.random.normal(0,1,100))
 
-sigy=sales/(1+sales)
-
-plt.hist(sales,bins=30)
-
-
-plt.hist(sigy,bins=30)
+y=L/(1+L)
 
 
 
@@ -32,10 +52,10 @@ def predict(X,B):
 
 coefs = np.random.normal(0,.05,2)
 
-lr = 1e-2
+lr = 1e0
 for i in range(200000):
     
-    grad = x.T@((predict(x,coefs)-sigy)*del_sig(predict(x,coefs)))
+    grad = x.T@((predict(x,coefs)-y)*del_sig(predict(x,coefs)))
     
     coefs=coefs-lr*grad
     
@@ -46,10 +66,19 @@ predsigy = predict(x,coefs)
 
 predsales=predsigy/(1-predsigy)
     
-plt.hist(predsales)
-
-plt.scatter(sales,predsales)
+plt.scatter(L,predsales)
 plt.xlim(0,1e10)
-plt.ylim(0,1e9)
- 
+plt.ylim(0,1e10)
+plt.show() 
 
+print(np.mean(abs(np.log(predsales)-np.log(L))))
+print(np.mean(abs(predsales-L)))
+
+#exp model alternative
+logL = np.log(L)
+coefs2 = np.linalg.inv(x.T@x)@(x.T@logL)
+pred = np.exp(x@coefs2)
+
+
+print(np.mean(abs(np.log(pred)-np.log(L))))
+print(np.mean(abs(pred-L)))
