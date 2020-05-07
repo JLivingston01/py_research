@@ -82,3 +82,30 @@ pred = np.exp(x@coefs2)
 
 print(np.mean(abs(np.log(pred)-np.log(L))))
 print(np.mean(abs(pred-L)))
+
+
+
+###
+
+plt.hist(sigmoid(x@[-3,3]))
+
+y = np.where(sigmoid(x@[-3,3])>.5,1,0)
+
+L = y/(1-y)
+L = np.where(L==np.inf,1e13,1e-13)
+logL = np.log(L)
+
+coefs2 = np.linalg.inv(x.T@x)@(x.T@logL)
+
+predL = np.exp(x@coefs2)
+
+
+predynum=predL/(1+predL)
+
+predy = np.where(predynum>.5,1,0)
+
+np.where(y == predy,1,0)
+
+
+
+
