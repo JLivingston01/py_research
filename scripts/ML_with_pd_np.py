@@ -99,14 +99,38 @@ matchdf.sort_values(by='match',ascending=False,inplace=True)
 matchdf.reset_index(inplace=True,drop=True)
 plt.plot(matchdf['match']) 
 
-variables=  list(matchdf['dim'][:30])
+variables=  list(matchdf['dim'][:14])
 
 
 X = dat[variables].copy()
 X['int']=1
 Y=dat['income']
 
+#Explicit Solution  
+#Calculate log-odds from label
+#Linear model for log odds
+
+
+LO = Y/(1-Y)
+LO = np.log(np.where(LO == np.inf,1e14,1e-14))
+
+logistic_explicit_coefs = np.linalg.inv(X.T@X)@(X.T@LO)
+
+
+Opred = np.exp(X@logistic_explicit_coefs)
+
+Ypred = Opred/(1+Opred)
+Ypred = np.where(Ypred>.5,1,0)
+
+
+err = np.where(Ypred==Y,1,0)
+
+acc = np.mean(err)
+
+#Descent solution
+
 logistic_coefs = np.random.normal(0,.5,len(X.columns.values))
+
 
 def sigmoid(x):
     return 1/(1+np.e**(-x))
@@ -122,7 +146,7 @@ def activation(x):
 
 lr=.001
 grad0 = np.array([1000 for i in logistic_coefs])
-tol = 1e-12
+tol = 1e-8
 for i in range(500):
     grad = (X.T@((predict(X,logistic_coefs)-Y)*del_sig(predict(X,logistic_coefs))))
     logistic_coefs=logistic_coefs-lr*grad
@@ -159,10 +183,6 @@ recall=tp/(tp+fn)
 accuracy=(tp+tn)/(tp+tn+fp+fn)
 
 
-# KMEANS
-
-import numpy as np
-
 d1 = np.random.normal(3,.5,(10,3))
 d2=np.random.normal(5,.5,(8,3))
 
@@ -172,6 +192,8 @@ d3=np.random.normal(7,.5,(8,3))
 d = np.vstack((d1,d2,d3))
 
 centroids=3
+
+c=np.random.normal(np.mean(d),np.std(d),(centroids,d.shape[1]))
 
 
 def kmeans(dat,centroids,max_iter):
@@ -195,4 +217,4 @@ def kmeans(dat,centroids,max_iter):
         
     return clusts
         
-kmeans(d,centroids,16)
+kmeans(d,3,16)
