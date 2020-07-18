@@ -84,58 +84,69 @@ X=(X-np.mean(X,axis=0))/np.std(X,axis=0)
 
 
 random.seed(42)
-index = np.array(random.choices([1,2,3,4,5],k=len(X)))
-
-
-xv = X[index==5].copy()
-yv = Y[index==5].copy()
-
-xt = X[index!=5].copy()
-yt = Y[index!=5].copy()
+index = np.array(random.choices([1,2,3,4,5,6],k=len(X)))
 
 
 
 acc = []
 
-for i in list(range(10,26)):
-    knn = KNeighborsClassifier(n_neighbors=i, 
-                                       weights='distance', 
-                                       algorithm='auto', leaf_size=30, p=2, 
-                                       metric='cityblock', metric_params=None, 
-                                       n_jobs=None)
-    
-    knn.fit(xt,yt)
-
-    acc.append(sum(np.where(knn.predict(xv)==yv,1,0))/len(yv))
-
-#plt.plot(acc)
-#plt.xticks(list(range(16)),list(range(10,26)))
-valset=5
-
-xv = X[index==valset].copy()
-yv = Y[index==valset].copy()
-
-xt = X[index!=valset].copy()
-yt = Y[index!=valset].copy()
+for i in list(range(2,30)):
+    avgscore=[]
+    for t in [1,2,3,4,5]:
+                
+        xv = X[index==t].copy()
+        yv = Y[index==t].copy()
+        
+        xt = X[~pd.Series(index).isin([t,6])].copy()
+        yt = Y[~pd.Series(index).isin([t,6])].copy()
 
 
-
-k=18
-k=4
-
-
-knn = KNeighborsClassifier(n_neighbors=k, 
+        knn = KNeighborsClassifier(n_neighbors=i, 
                                        weights='distance', 
                                        algorithm='auto', leaf_size=30, p=2, 
                                        metric='euclidean', metric_params=None, 
                                        n_jobs=None)
+        
+        knn.fit(xt,yt)
 
-stepsize=.1
-w0=np.ones(len(covars))
-delta=np.random.normal(0,stepsize/2,len(covars))
-knn.fit(xt*w0,yt)
+        avgscore.append(sum(np.where(knn.predict(xv)==yv,1,0))/len(yv))
+    acc.append(np.median(avgscore))
 
-score = (sum(np.where(knn.predict(xv*w0)==yv,1,0)))/(len(yv))
+plt.plot(acc)
+plt.xticks(list(range(28)),list(range(2,30)))
+plt.show()
+
+
+    #k=18
+k=16
+    
+initscores=[]   
+for val in [1,2,3,4,5]:
+    xv = X[pd.Series(index).isin([val])].copy()
+    yv = Y[pd.Series(index).isin([val])].copy()
+    
+    xt = X[~pd.Series(index).isin([val,6])].copy()
+    yt = Y[~pd.Series(index).isin([val,6])].copy()
+
+    
+    
+    
+    
+    knn = KNeighborsClassifier(n_neighbors=k, 
+                                           weights='distance', 
+                                           algorithm='auto', leaf_size=30, p=2, 
+                                           metric='euclidean', metric_params=None, 
+                                           n_jobs=None)
+    
+    stepsize=.1
+    w0=np.ones(len(covars))
+    delta=np.random.normal(0,stepsize/2,len(covars))
+    knn.fit(xt*w0,yt)
+    
+    score = (sum(np.where(knn.predict(xv*w0)==yv,1,0)))/(len(yv))
+    initscores.append(score)
+
+score=np.median(initscores)
 scoreinit=score
 #sum(np.where(knn.predict(xv*w0)==yv,1,0))/len(yv)
 #sum(np.where(knn.predict(xt*w0)==yt,1,0))/len(yt)
@@ -152,23 +163,38 @@ while len(wfin)<30:
     stepsize=.1
     delta=np.random.normal(0,stepsize/2,len(covars))
     w0=np.ones(len(covars))
+    #iteration=0
     
     while noupdate<120:
         
+        #iteration+=1
+        #val = iteration%4+1
         
-        w1 = w0+np.random.normal(delta,stepsize,len(covars))
-        
-        knn = KNeighborsClassifier(n_neighbors=k, 
-                                           weights='distance', 
-                                           algorithm='auto', leaf_size=30, p=2, 
-                                           metric='euclidean', metric_params=None, 
-                                           n_jobs=None)
-    
-        
-        knn.fit(xt*w1,yt)
-        
-        score2 = sum(np.where(knn.predict(xv*w1)==yv,1,0))/len(yv)
+        score2list=[]
+        for val in [1,2,3,4,5]:
             
+            xv = X[pd.Series(index).isin([val])].copy()
+            yv = Y[pd.Series(index).isin([val])].copy()
+            
+            xt = X[~pd.Series(index).isin([val,6])].copy()
+            yt = Y[~pd.Series(index).isin([val,6])].copy()
+    
+            
+            w1 = w0+np.random.normal(delta,stepsize,len(covars))
+            
+            knn = KNeighborsClassifier(n_neighbors=k, 
+                                               weights='distance', 
+                                               algorithm='auto', leaf_size=30, p=2, 
+                                               metric='euclidean', metric_params=None, 
+                                               n_jobs=None)
+        
+            
+            knn.fit(xt*w1,yt)
+            
+            score2 = sum(np.where(knn.predict(xv*w1)==yv,1,0))/len(yv)
+            score2list.append(score2)
+            
+        score2=np.median(score2list)    
         if score2>score:
             print(score2,score,"accepted",noupdate)
             deltachosen==True
@@ -181,7 +207,7 @@ while len(wfin)<30:
             noupdate+=1
             if deltachosen==False:
                 delta=np.random.normal(0,stepsize/2,len(covars))
-            if noupdate==20:
+            if noupdate%20==20:
                 deltachosen=False
                 stepsize=stepsize*.9
                 delta=np.random.normal(0,stepsize/2,len(covars))
@@ -200,11 +226,25 @@ np.std(wfin_arr,axis=0)
 
 for i in range(11):
     
-    plt.hist(wfin_arr.T[i])
+    plt.hist(wfin_arr.T[i],bins=10)
     plt.title(covars[i])
     plt.show()
+    
+    
+method=np.mean
 
-wf=np.median(wfin_arr,axis=0)
+xv = X[pd.Series(index).isin([6])].copy()
+yv = Y[pd.Series(index).isin([6])].copy()
+
+xt = X[pd.Series(index).isin([1,2,3,4,5])].copy()
+yt = Y[pd.Series(index).isin([1,2,3,4,5])].copy()
+
+wf=method(wfin_arr,axis=0)
+
+
+knn.fit(xt*wf,yt)
+sum(np.where(knn.predict(xv*wf)==yv,1,0))/len(yv)
+
 
 
 knn = KNeighborsClassifier(n_neighbors=k, 
@@ -214,13 +254,36 @@ knn = KNeighborsClassifier(n_neighbors=k,
                                    n_jobs=None)
 
 
-knn.fit(xt*wf,yt)
-sum(np.where(knn.predict(xv*wf)==yv,1,0))/len(yv)
-
-
-
 knn.fit(xt,yt)
 sum(np.where(knn.predict(xv)==yv,1,0))/len(yv)
+
+
+
+scores_ordered = sorted(range(len(scores)), key=lambda k: scores[k])
+
+
+wfin_sorted = wfin_arr[scores_ordered]
+
+wfin_selected = wfin_sorted[15:]
+
+
+wf_sort=method(wfin_selected,axis=0)
+
+
+knn = KNeighborsClassifier(n_neighbors=k, 
+                                   weights='distance', 
+                                   algorithm='auto', leaf_size=30, p=2, 
+                                   metric='euclidean', metric_params=None, 
+                                   n_jobs=None)
+
+
+knn.fit(xt*wf_sort,yt)
+
+sum(np.where(knn.predict(xv*wf_sort)==yv,1,0))/len(yv)
+
+
+
+
 
 
 
