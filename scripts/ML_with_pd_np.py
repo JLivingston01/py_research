@@ -182,7 +182,7 @@ recall=tp/(tp+fn)
 
 accuracy=(tp+tn)/(tp+tn+fp+fn)
 
-
+#Kmeans
 d1 = np.random.normal(3,.5,(10,3))
 d2=np.random.normal(5,.5,(8,3))
 
