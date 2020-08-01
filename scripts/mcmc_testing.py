@@ -8,6 +8,43 @@ Created on Thu Mar 12 01:18:18 2020
 import numpy as np
 
 
+import numpy as np
+
+X = np.array([[1,2,3],
+              [3,2,1],
+              [2,1,3],
+              [1,3,2]])
+
+
+B = [2,3,-3]
+
+Y = X@B
+
+
+draws = 300
+w0=np.random.normal(0,1,(3,draws))
+
+score0=1-np.sum((Y.reshape(4,1)-X@w0)**2,axis=0)/sum((Y-np.mean(Y))**2)
+
+delta=np.zeros((3,draws))
+stepsize=.0001
+
+updates = 0
+while updates < 20000:
+    w1=w0+np.random.normal(delta,stepsize)
+    
+    score1=1-np.sum((Y.reshape(4,1)-X@w1)**2,axis=0)/sum((Y-np.mean(Y))**2)
+    
+    
+    delta = np.where(score1>score0,w1-w0,delta)
+    w0=np.where(score1>score0,w1,w0)
+    print(sum(np.where(score1>score0,1,0)))
+    score0=score1
+    
+    updates+=1
+
+
+np.mean(w0,axis=1)
 
 
 """

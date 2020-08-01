@@ -298,9 +298,9 @@ def model_recall(X,Y,w,k):
     return score
     
 
-def sequential_MCMC(X,Y,draws=30,no_update_limit=120,
+def sequential_MCMC(X,Y,model_fn,draws=30,no_update_limit=120,
                     stepsize=.1,step_shrinkage=.9,
-                    delta_reset=20,model_fn=model_precision):
+                    delta_reset=20,):
     
     #INITIAL SCORE
     w0 = np.ones(len(X.columns.values))
@@ -347,9 +347,9 @@ def sequential_MCMC(X,Y,draws=30,no_update_limit=120,
     wfin_arr=np.vstack(wfin)
     return(wfin_arr,scores)
     
-wfin_arr,scores=sequential_MCMC(X,Y,draws=30,no_update_limit=120,
+wfin_arr,scores=sequential_MCMC(X,Y,model_fn=model_precision,draws=30,no_update_limit=120,
                     stepsize=.1,step_shrinkage=.9,
-                    delta_reset=20,model_fn=model)
+                    delta_reset=20)
     
     
 
@@ -411,7 +411,51 @@ print('precision: ',tp/(tp+fp))
 print('recall: ',tp/(tp+fn))
 print('accuracy: ',(tp+tn)/(tp+fn+fp+tn))
 
+
+
+
+
+wfin_arr,scores=sequential_MCMC(X,Y,model_fn=model_recall,draws=30,no_update_limit=120,
+                    stepsize=.1,step_shrinkage=.9,
+                    delta_reset=20)
     
+
+knn = KNeighborsClassifier(n_neighbors=k, 
+                                   weights='distance', 
+                                   algorithm='auto', leaf_size=30, p=2, 
+                                   metric='euclidean', metric_params=None, 
+                                   n_jobs=None)
+knn.fit(xt*wf,yt)
+
+tp=sum(np.where((knn.predict(xv*wf)==1)&(yv==1),1,0))
+fp=sum(np.where((knn.predict(xv*wf)==1)&(yv==0),1,0))
+tn=sum(np.where((knn.predict(xv*wf)==0)&(yv==0),1,0))
+fn=sum(np.where((knn.predict(xv*wf)==0)&(yv==1),1,0))
+print('precision: ',tp/(tp+fp))
+print('recall: ',tp/(tp+fn))
+print('accuracy: ',(tp+tn)/(tp+fn+fp+tn))
+
+
+
+
+knn = KNeighborsClassifier(n_neighbors=k, 
+                                   weights='distance', 
+                                   algorithm='auto', leaf_size=30, p=2, 
+                                   metric='euclidean', metric_params=None, 
+                                   n_jobs=None)
+
+
+knn.fit(xt,yt)
+
+tp=sum(np.where((knn.predict(xv)==1)&(yv==1),1,0))
+fp=sum(np.where((knn.predict(xv)==1)&(yv==0),1,0))
+tn=sum(np.where((knn.predict(xv)==0)&(yv==0),1,0))
+fn=sum(np.where((knn.predict(xv)==0)&(yv==1),1,0))
+print('precision: ',tp/(tp+fp))
+print('recall: ',tp/(tp+fn))
+print('accuracy: ',(tp+tn)/(tp+fn+fp+tn))
+
+
     
     
 initscores=[]   
