@@ -65,27 +65,34 @@ X=(X-np.mean(X,axis=0))/np.std(X,axis=0)
 random.seed(42)
 index = np.array(random.choices([1,2,3,4,5,6],k=len(X)))
 
-
-xv = X[index==5].copy()
-yv = Y[index==5].copy()
-
-xt = X[pd.Series(index).isin([1,2,3,4])].copy()
-yt = Y[pd.Series(index).isin([1,2,3,4])].copy()
-
-
-
 draws = 100
-w0=np.random.normal(1,.05,(xt.shape[1],draws))
-delta=np.zeros((xt.shape[1],draws))
+delta=np.zeros((X.shape[1],draws))
 stepsize=.1
+w0=np.random.normal(1,.05,(X.shape[1],draws))
 
-xtl=np.array([np.array(xt)*w0[:,i] for i in range(draws)])
-xvl=np.array([np.array(xv)*w0[:,i] for i in range(draws)])
+score0list=[]
+for fold in [1,2,3,4,5]:
+    xv = X[index==fold].copy()
+    yv = Y[index==fold].copy()
+    
+    xt = X[~pd.Series(index).isin([fold,6])].copy()
+    yt = Y[~pd.Series(index).isin([fold,6])].copy()
+    
+    
+    xtl=np.array([np.array(xt)*w0[:,i] for i in range(draws)])
+    xvl=np.array([np.array(xv)*w0[:,i] for i in range(draws)])
+    
+    
+    knn=np.array([KNeighborsClassifier().fit(xtl[i],yt).predict(xvl[i]) for i in range(draws)])
+    
+    score0 = np.mean(np.where(knn[:,np.array(yv)==1]==np.array(yv)[np.array(yv)==1],1,0),axis=1)
 
+    
+    score0list.append(score0)
 
-knn=np.array([KNeighborsClassifier().fit(xtl[i],yt).predict(xvl[i]) for i in range(draws)])
+score0=np.mean(np.array(score0list),axis=0)
 
-score0 = np.mean(np.where(knn==np.array(yv),1,0),axis=1)
+#np.mean(np.where(knn[:,np.array(yv)==1]==np.array(yv)[np.array(yv)==1],1,0),axis=1)
 
 
 updates = 0
@@ -93,13 +100,26 @@ while updates<300:
     w1 = w0+np.random.normal(delta,stepsize)
     
     
-    xtl=np.array([np.array(xt)*w1[:,i] for i in range(draws)])
-    xvl=np.array([np.array(xv)*w1[:,i] for i in range(draws)])
+    score1list=[]
+    for fold in [1,2,3,4,5]:
+        xv = X[index==fold].copy()
+        yv = Y[index==fold].copy()
+        
+        xt = X[~pd.Series(index).isin([fold,6])].copy()
+        yt = Y[~pd.Series(index).isin([fold,6])].copy()
+        
+        
+        xtl=np.array([np.array(xt)*w1[:,i] for i in range(draws)])
+        xvl=np.array([np.array(xv)*w1[:,i] for i in range(draws)])
+        
+        
+        knn=np.array([KNeighborsClassifier().fit(xtl[i],yt).predict(xvl[i]) for i in range(draws)])
+        
+        score1 = np.mean(np.where(knn[:,np.array(yv)==1]==np.array(yv)[np.array(yv)==1],1,0),axis=1)
+        
+        score1list.append(score1)
     
-    
-    knn=np.array([KNeighborsClassifier().fit(xtl[i],yt).predict(xvl[i]) for i in range(draws)])
-    
-    score1 = np.mean(np.where(knn==np.array(yv),1,0),axis=1)
+    score1=np.mean(np.array(score1list),axis=0)
     
     delta = np.where(score1>score0,w1-w0,delta)
     w0=np.where(score1>score0,w1,w0)
@@ -125,10 +145,15 @@ xvf=np.array(xv)*np.mean(w0,axis=1)
 
 knn=KNeighborsClassifier().fit(xtf,yt).predict(xvf) 
 
-acc = np.mean(np.where(knn==np.array(yv),1,0))
+acc1 = np.mean(np.where(knn==np.array(yv),1,0))
+rec1 = np.mean(np.where(knn[np.array(yv)==1]==np.array(yv)[np.array(yv)==1],1,0))
+prec1 = np.mean(np.where(knn[knn==1]==np.array(yv)[knn==1],1,0))
+
 
 
 
 knn=KNeighborsClassifier().fit(xt,yt).predict(xv) 
 
 acc = np.mean(np.where(knn==np.array(yv),1,0))
+rec = np.mean(np.where(knn[np.array(yv)==1]==np.array(yv)[np.array(yv)==1],1,0))
+prec= np.mean(np.where(knn[knn==1]==np.array(yv)[knn==1],1,0))
